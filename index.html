@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Efficient CPU Scheduler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .container {
+            padding: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Energy Efficient CPU Scheduler</h2>
+    <div class="container">
+        <input type="number" id="arrival_time" placeholder="Arrival Time">
+        <input type="number" id="burst_time" placeholder="Burst Time">
+        <input type="number" id="priority" placeholder="Priority (Lower is higher)">
+        <button onclick="addProcess()">Add Process</button>
+        <button onclick="scheduleProcesses()">Run Scheduler</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>PID</th>
+                <th>Arrival Time</th>
+                <th>Burst Time</th>
+                <th>Priority</th>
+                <th>Completion Time</th>
+                <th>Turnaround Time</th>
+                <th>Waiting Time</th>
+                <th>Energy Consumption</th>
+            </tr>
+        </thead>
+        <tbody id="processTable"></tbody>
+    </table>
+    
+    <script>
+        let processes = [];
+        let pid = 1;
+
+        function addProcess() {
+            let arrival = parseInt(document.getElementById('arrival_time').value);
+            let burst = parseInt(document.getElementById('burst_time').value);
+            let priority = parseInt(document.getElementById('priority').value);
+            
+            processes.push({ pid, arrival_time: arrival, burst_time: burst, priority, completion_time: 0, waiting_time: 0, turnaround_time: 0, energy_consumption: 0 });
+            pid++;
+            updateTable();
+        }
+
+        function scheduleProcesses() {
+            processes.sort((a, b) => a.arrival_time - b.arrival_time);
+            let readyQueue = [];
+            let time = 0;
+            let index = 0;
+            let totalEnergyConsumption = 0;
+
+            while (index < processes.length || readyQueue.length > 0) {
+                while (index < processes.length && processes[index].arrival_time <= time) {
+                    readyQueue.push(processes[index]);
+                    index++;
+                }
+                
+                if (readyQueue.length > 0) {
+                    readyQueue.sort((a, b) => a.priority - b.priority);
+                    let process = readyQueue.shift();
+                    time += process.burst_time;
+                    process.completion_time = time;
+                    process.turnaround_time = process.completion_time - process.arrival_time;
+                    process.waiting_time = process.turnaround_time - process.burst_time;
+                    process.energy_consumption = process.burst_time * 0.5;
+                    totalEnergyConsumption += process.energy_consumption;
+                } else {
+                    time++;
+                }
+            }
+            updateTable();
+        }
+
+        function updateTable() {
+            let table = document.getElementById("processTable");
+            table.innerHTML = "";
+            processes.forEach(proc => {
+                let row = `<tr>
+                    <td>${proc.pid}</td>
+                    <td>${proc.arrival_time}</td>
+                    <td>${proc.burst_time}</td>
+                    <td>${proc.priority}</td>
+                    <td>${proc.completion_time}</td>
+                    <td>${proc.turnaround_time}</td>
+                    <td>${proc.waiting_time}</td>
+                    <td>${proc.energy_consumption.toFixed(2)}</td>
+                </tr>`;
+                table.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+</html>
